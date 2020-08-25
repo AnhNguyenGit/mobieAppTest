@@ -20,7 +20,7 @@ public interface PcaCareService {
     @GET("api/callcenter")
     Call<List<String>>  listData ();
     @POST("api/v1/fcm/register-info")
-    Call<ResponseBody> postRegistrationId(@Body FirebaseRegistrationInfo data, @QueryMap Map<String, String> params);
+    Call<ResponseBody> postRegistrationId(@Body FirebaseRegistrationInfo data, @Query("access_token") String access_token);
     @POST("api/v1/login")
     Call<ResponseBody> login (@Body Object data);
 

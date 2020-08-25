@@ -65,8 +65,8 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(getApplicationContext(), "UserName and passoword is require", Toast.LENGTH_SHORT).show();
             return;
         }
-        ApiCall api = new ApiCall();
-        api.Login(username, password);
+        ApiCall api = new ApiCall(getApplicationContext());
+        api.Login(username, password, getApplicationContext());
 
     }
 

@@ -33,6 +33,7 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.net.URL;
+import java.util.Map;
 
 /**
  * An {@link IntentService} subclass for handling asynchronous task requests in
@@ -50,8 +51,14 @@ public class MyFirebaseService extends FirebaseMessagingService {
         // handle a notification payload.
         if (remoteMessage.getNotification() != null) {
             Log.d(TAG, "Message Notification Body: " + remoteMessage.getNotification().getBody());
-
-            sendNotification(remoteMessage.getNotification().getBody());
+            RemoteMessage.Notification notice = remoteMessage.getNotification();
+            String body = remoteMessage.getNotification().getBody();
+            Map<String, String> data = remoteMessage.getData();
+            String datastr = data.toString();
+            String messages = data.get("message");
+            String siteUrl = data.get("siteUrl");
+            String title = remoteMessage.getNotification().getTitle();
+            sendNotification(remoteMessage.getNotification().getBody(), title);
         }
     }
 
@@ -64,19 +71,16 @@ public class MyFirebaseService extends FirebaseMessagingService {
         jsonObject.addProperty("send_registration", false);
         //write data to file
         Store.writeToFile(jsonObject.toString(), getApplicationContext());
-
-
-
         Store.setFirebaseRegistrationToken(token);
-        sendRegistrationToServer(token);
+        //sendRegistrationToServer(token);
     }
 
     private void sendRegistrationToServer(String token) {
         // TODO: Implement this method to send token to your app server.
         try {
-            ApiCall apiCall = new ApiCall();
+            ApiCall apiCall = new ApiCall(getApplicationContext());
             //apiCall.CallCenterApi();
-            apiCall.PostTokenToServer(token, "dsfdsafsafasfdsafdsaf");
+           // apiCall.PostTokenToServer(token, "dsfdsafsafasfdsafdsaf");
 //            URL url = new URL("http://192.168.0.104:4256/api/callcenter");
 //            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 //            Log.d(TAG,"Connected to server");
@@ -108,7 +112,7 @@ public class MyFirebaseService extends FirebaseMessagingService {
         }
     }
 
-    private void sendNotification(String messageBody) {
+    private void sendNotification(String messageBody, String title) {
         Intent intent = new Intent(this, MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_ONE_SHOT);
@@ -122,6 +126,7 @@ public class MyFirebaseService extends FirebaseMessagingService {
                         .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher_background))
                         .setContentTitle(getString(R.string.project_id))
                         .setContentText(messageBody)
+                        .setContentTitle(title)
                         .setAutoCancel(true)
                         .setSound(defaultSoundUri)
                         .setContentIntent(pendingIntent)

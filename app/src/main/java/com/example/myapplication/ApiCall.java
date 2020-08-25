@@ -2,12 +2,20 @@ package com.example.myapplication;
 
 import android.content.Context;
 import android.nfc.Tag;
+import android.provider.Settings;
+import android.util.JsonToken;
 import android.util.Log;
 import android.widget.TabHost;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSerializationContext;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,8 +32,11 @@ import retrofit2.http.Body;
 
 public class ApiCall  {
     private static final String TAG = "ApiCall";
-    public  ApiCall(){
+    private String appId = "1:216004051522:android:0d314b3f21282881e363db";
+    private final Context context;
 
+    ApiCall(Context context){
+        this.context = context;
     }
     public  static  List<String> resData;
     public  void CallCenterApi(){
@@ -57,39 +68,39 @@ public class ApiCall  {
         List<String> Data = resData;
 
     }
-    public  void PostTokenToServer(String token, String accesst_token){
+    public  void PostTokenToServer(String access_token, String token, String userName, String DeviceId){
         FirebaseRegistrationInfo info = new FirebaseRegistrationInfo();
-        info.setAppId("AppId 1");
-        info.setDeviceInfo("DeviceId");
+        info.setAppId(appId);
+        info.setDeviceInfo(DeviceId);
         info.setRegistration_id(token);
-        info.setUsername("User03");
+        info.setUsername(userName);
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl("https://graph.pca.net.vn")
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
         PcaCareService servicecare = retrofit.create(PcaCareService.class);
-
-        Map<String, String> params =  new HashMap<String, String>();
-        params.put("access_token","opDXlrL7j5kRi9ZmMr95rzYDnkSAFwqEEX823MyedgdbR_2_QbGVL3qa7qF6jZb72-lVO0FIESgvG01KgPzHUcjrW8dgxaqE-GAt2nEOhC-Xq2htx97a_DS8k41aruxOBYthy8BI0HoAfNWrYLulJveCJqicIiZw_1jjU7OCjrEToyPps_6KjJXhleVC6PHCWZcWLhGt-YId2B99G2Oj0Ei2KFXLnyFPn1M0QTxHqQNPquxCt9lthbI1gqFiX-x8oeF7uW1UgVE6wUVMpc13l2buW2OAar1u_-5BBTBRy_XfpNerb1HyJH1bgGwoNKBXZ0BDdx4rWIJ11BXPqp6py1C79scwvIC5pmVtIN07CWV3PKZcUjYuLRXo5Nz_XK6b5t9vLVmFBoXxktnnSxtzbxPR0Ue7trur8hqiYttD-Uyro3eqmHLAovn7AwhbyCDjcP2VtYerYnu5LqD6KTYz8pYWduaiACnzOqoQWZHxzBWuG5a-Sgwhn25_qSxlvns4");
-        servicecare.postRegistrationId(info,params)
+        servicecare.postRegistrationId(info,access_token)
                .enqueue(new Callback<ResponseBody>() {
                    @Override
                    public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                        ResponseBody res = response.body();
                        String data = response.body().toString();
+                       Toast.makeText(context,"Post data to server success!", Toast.LENGTH_SHORT).show();
+
                    }
 
                    @Override
                    public void onFailure(Call<ResponseBody> call, Throwable t) {
                         Log.d(TAG,"Post data fail");
+                        Toast.makeText(context,"Post data to server fail!", Toast.LENGTH_SHORT).show();
                    }
                });
 
     }
 
-    public void Login(String username, String password){
-        final Context context;
+    public void Login(final String username, String password, final Context context){
+        //final Context context;
         JsonObject data = new JsonObject();
         data.addProperty("username", username);
         data.addProperty("password", password);
@@ -99,13 +110,7 @@ public class ApiCall  {
                 .build();
 
         PcaCareService servicecare = retrofit.create(PcaCareService.class);
-        try {
-            Response<ResponseBody> res  =  servicecare.login(data).execute();
-            String jsonstr = new Gson().toJson(res.body().string());
-            JsonObject obj = new JsonObject().getAsJsonObject(jsonstr);
-        }catch (Exception e){
-                Log.d("Loi", e.getMessage());
-        }
+
 
 
          servicecare.login(data)
@@ -115,11 +120,26 @@ public class ApiCall  {
                         Object body = response.body();
                         Object content  = response.body();
                         //JsonObject data = new JsonObject().get( response.body().toString()).getAsJsonObject();
-                        String result;
+                        String result ="No data";
                         try {
+                            if(body!=null)
+                            {
+                                Gson gson = new Gson();
+                                result = new Gson().toJson(response.body().string());
+                                JsonElement element = new JsonParser().parse(result);
+                                 String jContent = element.getAsString();
+                                 JsonObject resObj = gson.fromJson(jContent, JsonObject.class);
+                                String access_token = resObj.get("access_token").getAsString();
+                                String token = Store.readData(context);
+                                Gson jon = new Gson();
+                                JsonObject obj =  jon.fromJson(token, JsonObject.class);
+                                String registration_token = obj.get("registration_id").getAsString();
+                                String DeviceId = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
+                                PostTokenToServer(access_token,registration_token,username,DeviceId);
 
-                             result = new Gson().toJson(response.body().string());
+                            }
                              String s = result;
+                             Toast.makeText(context, "Login success!", Toast.LENGTH_SHORT).show();
                         }
                         catch (Exception e){
                             Log.d("Loi", e.getMessage());
