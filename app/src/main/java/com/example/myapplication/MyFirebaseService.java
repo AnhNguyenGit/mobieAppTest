@@ -58,7 +58,7 @@ public class MyFirebaseService extends FirebaseMessagingService {
             String messages = data.get("message");
             String siteUrl = data.get("siteUrl");
             String title = remoteMessage.getNotification().getTitle();
-            sendNotification(remoteMessage.getNotification().getBody(), title);
+            sendNotification(body+"("+messages+")", title,messages);
         }
     }
 
@@ -112,7 +112,7 @@ public class MyFirebaseService extends FirebaseMessagingService {
         }
     }
 
-    private void sendNotification(String messageBody, String title) {
+    private void sendNotification(String messageBody, String title, String Info) {
         Intent intent = new Intent(this, MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_ONE_SHOT);
@@ -126,6 +126,7 @@ public class MyFirebaseService extends FirebaseMessagingService {
                         .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher_background))
                         .setContentTitle(getString(R.string.project_id))
                         .setContentText(messageBody)
+                        .setContentInfo(Info)
                         .setContentTitle(title)
                         .setAutoCancel(true)
                         .setSound(defaultSoundUri)
